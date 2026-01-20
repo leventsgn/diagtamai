@@ -26,7 +26,7 @@ function loadLlm(): LlmConfig {
   const raw = localStorage.getItem("llm_config");
   if (!raw) {
     return {
-      url: "https://diagtamai-1.onrender.com/v1/chat/completions",
+      url: "https://diagtamai-8.onrender.com/v1/chat/completions",
       token: "",
       model: "gpt-4o-mini",
     };

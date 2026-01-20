@@ -1,0 +1,9 @@
+{
+  "name": "diagram-ai",
+  "private": true,
+  "workspaces": ["server", "web"],
+  "scripts": {
+    "dev": "npm -w server run dev & npm -w web run dev",
+    "dev:win": "start cmd /k \"npm -w server run dev\" && start cmd /k \"npm -w web run dev\""
+  }
+}

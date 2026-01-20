@@ -10,7 +10,7 @@ export async function requestPatch(args: {
   lockPositions: boolean;
   signal?: AbortSignal;
 }) {
-  const res = await fetch("/api/diagram/patch", {
+  const res = await fetch("https://diagtamai-8.onrender.com/api/diagram/patch", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     signal: args.signal,

@@ -3,10 +3,11 @@ services:
     name: diagtamai-api
     runtime: node
     plan: free
-    buildCommand: cd diagram-ai/server && npm install
-    startCommand: cd diagram-ai/server && npm run dev
+    rootDirectory: diagram-ai/server
+    buildCommand: npm install
+    startCommand: npm run start
     envVars:
       - key: NODE_ENV
         value: production
       - key: PORT
-        value: 3001
+        value: 10000

@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import type { Edge, Node } from "reactflow";
+import type { Edge, Node, MarkerType } from "reactflow";
 
 export type LlmConfig = {
   url: string;
@@ -9,7 +9,16 @@ export type LlmConfig = {
 
 export type GraphState = {
   version: string;
-  nodes: { id: string; type: string; x: number; y: number; label: string }[];
+  nodes: { 
+    id: string; 
+    type: string; 
+    x: number; 
+    y: number; 
+    label: string;
+    width?: number;
+    height?: number;
+    parent?: string;
+  }[];
   edges: { id: string; from: string; to: string; label?: string }[];
 };
 
@@ -40,13 +49,13 @@ function saveLlm(cfg: LlmConfig) {
 const initialGraph: GraphState = {
   version: "init0001",
   nodes: [
-    { id: "USR", type: "actor", x: 80, y: 80, label: "Kullanıcı" },
-    { id: "START", type: "start", x: 320, y: 80, label: "Başla" },
-    { id: "END", type: "end", x: 560, y: 80, label: "Bitti" },
+    { id: "USR", type: "actor", x: 100, y: 100, label: "Kullanıcı" },
+    { id: "START", type: "start", x: 300, y: 100, label: "Başla" },
+    { id: "END", type: "end", x: 500, y: 100, label: "Bitti" },
   ],
   edges: [
-    { id: "E1", from: "USR", to: "START", label: "" },
-    { id: "E2", from: "START", to: "END", label: "" },
+    { id: "E1", from: "USR", to: "START", label: "tıklar" },
+    { id: "E2", from: "START", to: "END", label: "devam" },
   ],
 };
 
@@ -56,6 +65,10 @@ export const useAppStore = create<{
 
   graph: GraphState;
   setGraph: (g: GraphState) => void;
+
+  // Cached ReactFlow data
+  rfNodes: Node[];
+  rfEdges: Edge[];
 
   prompt: string;
   setPrompt: (v: string) => void;
@@ -72,8 +85,13 @@ export const useAppStore = create<{
   status: string;
   setStatus: (v: string) => void;
 
+  // Layout direction
+  layoutDirection: 'TB' | 'LR';
+  setLayoutDirection: (v: 'TB' | 'LR') => void;
+
   toReactFlow: () => { nodes: Node[]; edges: Edge[] };
   fromReactFlow: (nodes: Node[], edges: Edge[]) => void;
+  updateReactFlowCache: () => void;
 }>( (set, get) => ({
   llm: loadLlm(),
   setLlm: (p) => {
@@ -83,12 +101,41 @@ export const useAppStore = create<{
   },
 
   graph: initialGraph,
-  setGraph: (g) => set({ graph: g }),
+  setGraph: (g) => {
+    set({ graph: g });
+    get().updateReactFlowCache();
+  },
+
+  // Initialize cached ReactFlow data
+  rfNodes: initialGraph.nodes.map((n) => ({
+    id: n.id,
+    position: { x: n.x, y: n.y },
+    data: { label: n.label, nodeType: n.type },
+    type: "default" as const,
+  })),
+  rfEdges: initialGraph.edges.map((e) => ({
+    id: e.id,
+    source: e.from,
+    target: e.to,
+    label: e.label ?? "",
+    type: "smoothstep",
+    animated: true,
+    style: { 
+      stroke: '#2563eb',
+      strokeWidth: 2,
+    },
+    markerEnd: {
+      type: 'arrowclosed',
+      color: '#2563eb',
+      width: 15,
+      height: 15,
+    },
+  })),
 
   prompt: "Basit bir login + dashboard + ödeme akışı çiz.",
   setPrompt: (v) => set({ prompt: v }),
 
-  live: true,
+  live: false,
   setLive: (v) => set({ live: v }),
 
   lockPositions: false,
@@ -100,21 +147,57 @@ export const useAppStore = create<{
   status: "Hazır",
   setStatus: (v) => set({ status: v }),
 
-  toReactFlow: () => {
+  layoutDirection: 'TB',
+  setLayoutDirection: (v) => set({ layoutDirection: v }),
+
+  applyLayout: () => {
+    // Bu fonksiyon artık buton tıklamasıyla çağrılacak
+    // DiagramCanvas component'inden kullanılacak
+  },
+
+  updateReactFlowCache: () => {
     const g = get().graph;
     const nodes: Node[] = g.nodes.map((n) => ({
       id: n.id,
       position: { x: n.x, y: n.y },
-      data: { label: n.label, nodeType: n.type },
+      data: { 
+        label: n.label, 
+        nodeType: n.type,
+        width: (n as any).width,
+        height: (n as any).height,
+      },
       type: "default",
-    }));
+      style: (n as any).width && (n as any).height ? {
+        width: (n as any).width,
+        height: (n as any).height,
+      } : undefined,
+      parentNode: (n as any).parent,
+      extent: (n as any).parent ? 'parent' : undefined,
+    } as Node));
     const edges: Edge[] = g.edges.map((e) => ({
       id: e.id,
       source: e.from,
       target: e.to,
       label: e.label ?? "",
+      type: "smoothstep",
+      animated: true,
+      style: { 
+        stroke: '#2563eb',
+        strokeWidth: 2,
+      },
+      markerEnd: {
+        type: 'arrowclosed',
+        color: '#2563eb',
+        width: 15,
+        height: 15,
+      },
     }));
-    return { nodes, edges };
+    console.log("updateReactFlowCache - Creating edges:", edges);
+    set({ rfNodes: nodes, rfEdges: edges });
+  },
+
+  toReactFlow: () => {
+    return { nodes: get().rfNodes, edges: get().rfEdges };
   },
 
   fromReactFlow: (nodes, edges) => {
@@ -127,6 +210,9 @@ export const useAppStore = create<{
         x: n.position.x,
         y: n.position.y,
         label: (n.data as any)?.label ?? n.id,
+        ...(n.style?.width && { width: n.style.width as number }),
+        ...(n.style?.height && { height: n.style.height as number }),
+        ...(n.parentNode && { parent: n.parentNode }),
       })),
       edges: edges.map((e) => ({
         id: e.id,
@@ -136,5 +222,6 @@ export const useAppStore = create<{
       })),
     };
     set({ graph: next });
+    get().updateReactFlowCache();
   },
 }) );

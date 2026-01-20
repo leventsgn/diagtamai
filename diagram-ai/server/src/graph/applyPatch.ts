@@ -26,7 +26,16 @@ export function applyPatch(current: Graph, patch: Patch): Graph {
       case "add_node": {
         if (nodes.has(op.id)) throw new Error(`node exists: ${op.id}`);
         const pos = stableNewNodePosition(nodes.size);
-        nodes.set(op.id, { id: op.id, type: op.type, label: op.label, x: pos.x, y: pos.y });
+        nodes.set(op.id, { 
+          id: op.id, 
+          type: op.type, 
+          label: op.label, 
+          x: pos.x, 
+          y: pos.y,
+          ...(op.width && { width: op.width }),
+          ...(op.height && { height: op.height }),
+          ...(op.parent && { parent: op.parent }),
+        });
         break;
       }
 

@@ -1,20 +1,32 @@
 export function buildSystemPrompt(): string {
   return [
-    "Türkçe sorulara Türkçe cevap ver.",
-    "SADECE JSON döndür. JSON dışında tek karakter yazma.",
+    "You MUST return ONLY valid JSON. No explanations, no markdown, no code blocks.",
     "",
-    "GÖREV: Mevcut diyagram grafiğini güncellemek için PATCH üret.",
+    "TASK: Generate a PATCH to update the diagram graph.",
     "",
-    "PATCH ŞEMASI:",
-    "{\"base_version\":\"string\",\"ops\":[{\"op\":\"add_node\"|\"update_node\"|\"delete_node\"|\"add_edge\"|\"update_edge\"|\"delete_edge\"|\"layout_hint\", ...}]}",
+    "EXACT JSON SCHEMA (copy this structure):",
+    "{",
+    '  "base_version": "copy from input exactly",',
+    '  "ops": [',
+    '    {"op": "add_node", "id": "SHORTID", "type": "process", "label": "Turkish text"},',
+    '    {"op": "add_node", "id": "GRP1", "type": "group", "label": "Container Name", "width": 400, "height": 300},',
+    '    {"op": "add_node", "id": "CHILD", "type": "process", "label": "Child Node", "parent": "GRP1"},',
+    '    {"op": "add_edge", "id": "E1", "from": "ID1", "to": "ID2", "label": ""}',
+    '  ]',
+    "}",
     "",
-    "KURALLAR:",
-    "- base_version input ile birebir aynı olmalı.",
-    "- Minimal değişiklik yap. Gereksiz silme/yeniden yazma yok.",
-    "- Yeni id'ler anlamlı kısaltma olsun: USR, CHK, ODME, AUTH, ERR, DB gibi.",
-    "- Node type yalnızca: process, decision, start, end, datastore, actor, note.",
-    "- lock_positions=true ise layout_hint: preserve_positions; değilse auto.",
-    "- Asla açıklama yazma, sadece JSON.",
+    "VALID TYPES: process, decision, start, end, datastore, actor, note, group",
+    "",
+    "GROUP NODES:",
+    "- Use type 'group' for containers (like 'APP SERVERS', 'SERVICES', 'DATABASE CLUSTER')",
+    "- Groups must have width and height (e.g., width: 400, height: 300)",
+    "- Child nodes use 'parent' field to be inside a group (e.g., \"parent\": \"GRP1\")",
+    "- Position child nodes relative to top-left of parent (x: 50, y: 50 for padding)",
+    "",
+    "EXAMPLE:",
+    '{"base_version":"init0001","ops":[{"op":"add_node","id":"LOGIN","type":"process","label":"Giriş Yap"}]}',
+    "",
+    "CRITICAL: Return ONLY the JSON object. No text before or after.",
   ].join("\n");
 }
 
@@ -26,15 +38,16 @@ export function buildUserPrompt(input: {
   instruction: string;
 }): string {
   return [
-    `BASE_VERSION: ${input.base_version}`,
-    `LOCK_POSITIONS: ${input.lock_positions}`,
-    `NODE_LIMIT: ${input.node_limit}`,
+    `base_version to use: "${input.base_version}"`,
+    `Max nodes: ${input.node_limit}`,
     "",
-    "MEVCUT_GRAPH(JSON):",
+    "Current graph:",
     input.current_graph_json,
     "",
-    "YENİ_İSTEK:",
+    "User request (use Turkish labels in response):",
     input.instruction,
+    "",
+    "Return ONLY the JSON patch object now:",
   ].join("\n");
 }
 

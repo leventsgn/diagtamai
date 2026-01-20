@@ -8,6 +8,7 @@ export const NodeType = z.enum([
   "datastore",
   "actor",
   "note",
+  "group",
 ]);
 
 export const GraphNode = z.object({
@@ -16,6 +17,9 @@ export const GraphNode = z.object({
   x: z.number(),
   y: z.number(),
   label: z.string().min(1),
+  width: z.number().optional(),
+  height: z.number().optional(),
+  parent: z.string().optional(),
 });
 
 export const GraphEdge = z.object({
@@ -34,7 +38,15 @@ export const Graph = z.object({
 export type Graph = z.infer<typeof Graph>;
 
 export const PatchOp = z.discriminatedUnion("op", [
-  z.object({ op: z.literal("add_node"), id: z.string().min(1), type: NodeType, label: z.string().min(1) }),
+  z.object({ 
+    op: z.literal("add_node"), 
+    id: z.string().min(1), 
+    type: NodeType, 
+    label: z.string().min(1),
+    width: z.number().optional(),
+    height: z.number().optional(),
+    parent: z.string().optional(),
+  }),
   z.object({
     op: z.literal("update_node"),
     id: z.string().min(1),

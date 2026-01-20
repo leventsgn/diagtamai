@@ -26,18 +26,18 @@ function loadLlm(): LlmConfig {
   const raw = localStorage.getItem("llm_config");
   if (!raw) {
     return {
-      url: "http://127.0.0.1:8000/v1/chat/completions",
+      url: "https://diagtamai-1.onrender.com/v1/chat/completions",
       token: "",
-      model: "gpt-oss-120b",
+      model: "gpt-4o-mini",
     };
   }
   try {
     return JSON.parse(raw);
   } catch {
     return {
-      url: "http://127.0.0.1:8000/v1/chat/completions",
+      url: "https://diagtamai-1.onrender.com/v1/chat/completions",
       token: "",
-      model: "gpt-oss-120b",
+      model: "gpt-4o-mini",
     };
   }
 }

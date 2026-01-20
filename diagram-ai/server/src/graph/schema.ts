@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 export const NodeType = z.enum([
+  // Basic
   "process",
   "decision",
   "start",
@@ -9,6 +10,57 @@ export const NodeType = z.enum([
   "actor",
   "note",
   "group",
+  
+  // Web & Frontend
+  "web_client",
+  "mobile_app",
+  "cdn",
+  "load_balancer",
+  "api_gateway",
+  
+  // Backend & Services
+  "api_server",
+  "microservice",
+  "background_job",
+  "queue",
+  "message_broker",
+  "cron_job",
+  
+  // Database & Storage
+  "sql_database",
+  "nosql_database",
+  "cache",
+  "object_storage",
+  "file_storage",
+  "data_warehouse",
+  
+  // Infrastructure
+  "server",
+  "container",
+  "kubernetes",
+  "cloud_service",
+  "vm",
+  
+  // Communication
+  "email_service",
+  "sms_service",
+  "notification",
+  "webhook",
+  "websocket",
+  
+  // Security & Auth
+  "auth_service",
+  "firewall",
+  "vpn",
+  
+  // Monitoring & Analytics
+  "monitoring",
+  "logging",
+  "analytics",
+  
+  // Integration
+  "third_party_api",
+  "payment_gateway",
 ]);
 
 export const GraphNode = z.object({
@@ -20,6 +72,9 @@ export const GraphNode = z.object({
   width: z.number().optional(),
   height: z.number().optional(),
   parent: z.string().optional(),
+  color: z.string().optional(), // hex color
+  icon: z.string().optional(), // emoji or icon name
+  description: z.string().optional(), // tooltip text
 });
 
 export const GraphEdge = z.object({
@@ -46,6 +101,9 @@ export const PatchOp = z.discriminatedUnion("op", [
     width: z.number().optional(),
     height: z.number().optional(),
     parent: z.string().optional(),
+    color: z.string().optional(),
+    icon: z.string().optional(),
+    description: z.string().optional(),
   }),
   z.object({
     op: z.literal("update_node"),

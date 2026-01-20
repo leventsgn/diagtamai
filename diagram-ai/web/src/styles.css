@@ -238,3 +238,40 @@ h3 { margin: 6px 0 10px 0; font-size: 14px; color: var(--text); }
 .react-flow__background {
   background: var(--bg);
 }
+
+/* Handle'ları varsayılan olarak gizle, hover/connect sırasında göster */
+.react-flow__handle {
+  opacity: 0;
+  transition: opacity 0.2s, transform 0.2s;
+}
+
+.react-flow__node:hover .react-flow__handle,
+.react-flow__handle.connecting,
+.react-flow__handle.valid {
+  opacity: 1;
+  transform: scale(1.2);
+}
+
+/* Connection line'ı daha belirgin yap */
+.react-flow__connection-path {
+  stroke-width: 3;
+  animation: dash 1s linear infinite;
+}
+
+@keyframes dash {
+  to {
+    stroke-dashoffset: -10;
+  }
+}
+
+/* Edge label'ları daha okunabilir yap */
+.react-flow__edge-text {
+  fill: var(--text);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.react-flow__edge-textbg {
+  fill: var(--bg);
+  opacity: 0.9;
+}

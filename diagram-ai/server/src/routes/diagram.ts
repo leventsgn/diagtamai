@@ -1,14 +1,14 @@
 import { Router } from "express";
 import { z } from "zod";
-import { Graph, Patch } from "../graph/schema.ts";
-import { applyPatch } from "../graph/applyPatch.ts";
-import { callLlm } from "../llm/client.ts";
+import { Graph, Patch } from "../graph/schema.js";
+import { applyPatch } from "../graph/applyPatch.js";
+import { callLlm } from "../llm/client.js";
 import {
   buildSystemPrompt,
   buildUserPrompt,
   buildRepairSystemPrompt,
   buildRepairUserPrompt,
-} from "../llm/prompts.ts";
+} from "../llm/prompts.js";
 
 const router = Router();
 

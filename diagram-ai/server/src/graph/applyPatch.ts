@@ -1,5 +1,5 @@
 import crypto from "crypto";
-import { Graph, Patch } from "./schema.ts";
+import { Graph, Patch } from "./schema.js";
 
 function hashGraph(graph: Omit<Graph, "version">): string {
   const s = JSON.stringify(graph);
@@ -35,6 +35,9 @@ export function applyPatch(current: Graph, patch: Patch): Graph {
           ...(op.width && { width: op.width }),
           ...(op.height && { height: op.height }),
           ...(op.parent && { parent: op.parent }),
+          ...(op.color && { color: op.color }),
+          ...(op.icon && { icon: op.icon }),
+          ...(op.description && { description: op.description }),
         });
         break;
       }

@@ -10,7 +10,10 @@ export async function requestPatch(args: {
   lockPositions: boolean;
   signal?: AbortSignal;
 }) {
-  const res = await fetch("https://diagtamai-8.onrender.com/api/diagram/patch", {
+  // Production API kullan - local backend devcontainer'da sorunlu
+  const API_URL = "https://diagtamai-8.onrender.com/api/diagram/patch";
+  
+  const res = await fetch(API_URL, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     signal: args.signal,

@@ -18,6 +18,9 @@ export type GraphState = {
     width?: number;
     height?: number;
     parent?: string;
+    color?: string;
+    icon?: string;
+    description?: string;
   }[];
   edges: { id: string; from: string; to: string; label?: string }[];
 };
@@ -118,17 +121,19 @@ export const useAppStore = create<{
     source: e.from,
     target: e.to,
     label: e.label ?? "",
-    type: "smoothstep",
+    type: "simplebezier",
     animated: true,
+    sourceHandle: undefined,
+    targetHandle: undefined,
     style: { 
-      stroke: '#2563eb',
+      stroke: '#6366f1',
       strokeWidth: 2,
     },
     markerEnd: {
-      type: 'arrowclosed',
-      color: '#2563eb',
-      width: 15,
-      height: 15,
+      type: 'arrowclosed' as any,
+      color: '#6366f1',
+      width: 20,
+      height: 20,
     },
   })),
 
@@ -165,6 +170,9 @@ export const useAppStore = create<{
         nodeType: n.type,
         width: (n as any).width,
         height: (n as any).height,
+        color: (n as any).color,
+        icon: (n as any).icon,
+        description: (n as any).description,
       },
       type: "default",
       style: (n as any).width && (n as any).height ? {
@@ -179,17 +187,19 @@ export const useAppStore = create<{
       source: e.from,
       target: e.to,
       label: e.label ?? "",
-      type: "smoothstep",
+      type: "simplebezier",
       animated: true,
+      sourceHandle: undefined,  // Dinamik routing için undefined
+      targetHandle: undefined,  // Dinamik routing için undefined
       style: { 
-        stroke: '#2563eb',
+        stroke: '#6366f1',
         strokeWidth: 2,
       },
       markerEnd: {
-        type: 'arrowclosed',
-        color: '#2563eb',
-        width: 15,
-        height: 15,
+        type: 'arrowclosed' as any,
+        color: '#6366f1',
+        width: 20,
+        height: 20,
       },
     }));
     console.log("updateReactFlowCache - Creating edges:", edges);
@@ -213,6 +223,9 @@ export const useAppStore = create<{
         ...(n.style?.width && { width: n.style.width as number }),
         ...(n.style?.height && { height: n.style.height as number }),
         ...(n.parentNode && { parent: n.parentNode }),
+        ...((n.data as any)?.color && { color: (n.data as any).color }),
+        ...((n.data as any)?.icon && { icon: (n.data as any).icon }),
+        ...((n.data as any)?.description && { description: (n.data as any).description }),
       })),
       edges: edges.map((e) => ({
         id: e.id,

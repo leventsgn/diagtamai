@@ -8,6 +8,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@tisoap/react-flow-smart-edge": "^4.0.1",
     "@types/dagre": "^0.7.53",
     "dagre": "^0.8.5",
     "react": "^18.3.1",

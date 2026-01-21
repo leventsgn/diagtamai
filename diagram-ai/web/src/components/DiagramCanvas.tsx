@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect } from "react";
+import React, { useCallback, useEffect, useRef } from "react";
 import ReactFlow, {
   Background,
   Controls,
@@ -9,6 +9,7 @@ import ReactFlow, {
   applyEdgeChanges,
   applyNodeChanges,
   useReactFlow,
+  ReactFlowProvider,
   MarkerType,
   type Connection,
   type Edge,
@@ -21,6 +22,7 @@ import "reactflow/dist/style.css";
 import "reactflow/dist/base.css";
 import dagre from "dagre";
 import { useAppStore } from "../store/useAppStore";
+import { uuid } from "../lib/api";
 
 // Custom node component that displays the label
 function CustomNode({ data, selected }: NodeProps) {
@@ -198,13 +200,13 @@ function CustomNode({ data, selected }: NodeProps) {
   const finalColor = data.color || nodeStyle.color;
   const finalBorderColor = data.color || nodeStyle.borderColor;
   
-  // Handle stil - daha belirgin
+  // Handle stil - modern ve sade
   const handleStyle = {
     background: finalBorderColor,
-    width: '12px',
-    height: '12px',
-    border: `2px solid var(--bg)`,
-    boxShadow: `0 2px 6px ${finalBorderColor}40`,
+    width: '10px',
+    height: '10px',
+    border: `2px solid var(--card-bg)`,
+    boxShadow: `0 2px 8px ${finalBorderColor}30`,
   };
 
   // Container/Kubernetes (hexagon) için özel render
@@ -761,32 +763,34 @@ function CustomNode({ data, selected }: NodeProps) {
 
   return (
     <div style={{ 
-      padding: '16px 32px', 
+      padding: '16px 28px', 
       borderRadius: '12px',
-      background: nodeStyle.background,
-      border: `2px solid ${selected ? finalBorderColor : finalBorderColor}`,
+      background: 'rgba(12, 14, 18, 0.75)',
+      border: `1.25px solid ${finalBorderColor}`,
       color: finalColor,
-      minWidth: '160px',
+      minWidth: '170px',
       textAlign: 'center',
-      fontSize: '15px',
+      fontSize: '14px',
       fontWeight: 600,
+      letterSpacing: '0.2px',
       boxShadow: selected 
-        ? `0 8px 20px ${finalBorderColor}40, 0 0 0 3px ${finalBorderColor}20`
-        : `0 2px 8px ${finalBorderColor}30`,
+        ? `0 10px 24px ${finalBorderColor}30, 0 0 0 2px ${finalBorderColor}30`
+        : `0 8px 18px rgba(0,0,0,0.35)`,
       transition: 'all 0.2s ease',
       cursor: 'grab',
-      transform: selected ? 'scale(1.05)' : 'scale(1)',
+      transform: selected ? 'scale(1.02)' : 'scale(1)',
       position: 'relative',
       overflow: 'visible',
+      backdropFilter: 'blur(8px)',
     }}>
       <div style={{
         position: 'absolute',
-        top: '-2px',
-        left: '-2px',
-        right: '-2px',
-        bottom: '-2px',
+        top: '-1px',
+        left: '-1px',
+        right: '-1px',
+        bottom: '-1px',
         borderRadius: '12px',
-        background: `linear-gradient(135deg, ${finalBorderColor}00, ${finalBorderColor}30)`,
+        background: `linear-gradient(135deg, ${finalBorderColor}00, ${finalBorderColor}14)`,
         pointerEvents: 'none',
         opacity: selected ? 1 : 0,
         transition: 'opacity 0.2s',
@@ -861,14 +865,14 @@ function CustomNode({ data, selected }: NodeProps) {
         zIndex: 1,
       }}>
         <span style={{ 
-          fontSize: '20px',
-          filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.1))',
+          fontSize: '18px',
+          filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.08))',
         }}>
           {data.icon || getIcon(nodeType)}
         </span>
         <span style={{
           letterSpacing: '0.3px',
-          textShadow: selected ? `0 0 20px ${finalBorderColor}60` : 'none',
+          textShadow: selected ? `0 0 14px ${finalBorderColor}45` : 'none',
         }}>
           {data.label}
         </span>
@@ -882,7 +886,41 @@ const nodeTypes = {
 };
 
 // Dagre layout fonksiyonu - geliştirilmiş
-const getLayoutedElements = (nodes: Node[], edges: Edge[], direction = 'TB') => {
+type LayoutDensity = 'compact' | 'comfortable' | 'spacious';
+type LayoutRanker = 'network-simplex' | 'tight-tree' | 'longest-path';
+type LayoutDirection = 'TB' | 'LR';
+
+const resolveLayoutOptions = (nodes: Node[], edges: Edge[]) => {
+  const nodeCount = nodes.length;
+  const edgeCount = edges.length;
+  const avgDegree = nodeCount > 0 ? edgeCount / nodeCount : 0;
+
+  let density: LayoutDensity = 'comfortable';
+  if (nodeCount >= 30 || avgDegree >= 1.6) {
+    density = 'spacious';
+  } else if (nodeCount <= 10 && avgDegree <= 1.0) {
+    density = 'compact';
+  }
+
+  let ranker: LayoutRanker = 'network-simplex';
+  if (edgeCount <= Math.max(1, nodeCount - 1) && avgDegree <= 1.2) {
+    ranker = 'longest-path';
+  } else if (avgDegree <= 1.4) {
+    ranker = 'tight-tree';
+  }
+
+  const direction: LayoutDirection = nodeCount >= 20 || avgDegree >= 1.4 ? 'LR' : 'TB';
+
+  return { density, ranker, direction };
+};
+
+const getLayoutedElements = (
+  nodes: Node[],
+  edges: Edge[],
+  direction: LayoutDirection,
+  density: LayoutDensity,
+  ranker: LayoutRanker
+) => {
   const dagreGraph = new dagre.graphlib.Graph();
   dagreGraph.setDefaultEdgeLabel(() => ({}));
   
@@ -919,14 +957,22 @@ const getLayoutedElements = (nodes: Node[], edges: Edge[], direction = 'TB') => 
 
   const groupPadding = 80;
 
+  const densityMap = {
+    compact: { nodesep: 120, ranksep: 180, edgesep: 60, marginx: 60, marginy: 60 },
+    comfortable: { nodesep: 180, ranksep: 250, edgesep: 100, marginx: 100, marginy: 100 },
+    spacious: { nodesep: 240, ranksep: 320, edgesep: 140, marginx: 140, marginy: 140 },
+  } as const;
+  const baseSpacing = densityMap[density];
+  const scale = Math.min(1.4, 1 + Math.max(0, nodes.length - 25) / 80);
+
   dagreGraph.setGraph({ 
     rankdir: direction,
-    nodesep: 180,  // Yatay mesafe artırıldı
-    ranksep: 250,  // Dikey mesafe artırıldı
-    edgesep: 100,   // Edge'ler arası mesafe
-    marginx: 100,
-    marginy: 100,
-    ranker: 'network-simplex', // Daha iyi hiyerarşi
+    nodesep: Math.round(baseSpacing.nodesep * scale),
+    ranksep: Math.round(baseSpacing.ranksep * scale),
+    edgesep: Math.round(baseSpacing.edgesep * scale),
+    marginx: Math.round(baseSpacing.marginx * scale),
+    marginy: Math.round(baseSpacing.marginy * scale),
+    ranker,
   });
 
   // Önce parent node'ları, sonra child'ları ekle
@@ -1004,14 +1050,19 @@ const getLayoutedElements = (nodes: Node[], edges: Edge[], direction = 'TB') => 
   return { nodes: layoutedNodes, edges };
 };
 
-export default function DiagramCanvas() {
+function DiagramCanvasInner() {
   const rfNodes = useAppStore((s) => s.rfNodes);
   const rfEdges = useAppStore((s) => s.rfEdges);
-  const layoutDirection = useAppStore((s) => s.layoutDirection);
+  const graphVersion = useAppStore((s) => s.graph.version);
   const fromReactFlow = useAppStore((s) => s.fromReactFlow);
+  const reactFlow = useReactFlow();
+  const wrapperRef = useRef<HTMLDivElement | null>(null);
+  const [toolsOpen, setToolsOpen] = React.useState(false);
 
   const [nodes, setNodes] = React.useState<Node[]>([]);
   const [edges, setEdges] = React.useState<Edge[]>([]);
+  const lastLayoutVersion = React.useRef<string | null>(null);
+  const prevPositions = React.useRef<Map<string, { x: number; y: number }>>(new Map());
 
   // En uygun handle'ı hesaplayan yardımcı fonksiyon - önce tanımla
   const updateEdgeHandles = useCallback((currentNodes: Node[], currentEdges: Edge[]) => {
@@ -1052,46 +1103,57 @@ export default function DiagramCanvas() {
     });
   }, []);
 
-  // LLM'den gelen pozisyonları olduğu gibi kullan
+  // Güncellemelerde mevcut node pozisyonlarını koru
   React.useEffect(() => {
     console.log("DiagramCanvas - Store updated:", rfNodes.length, "nodes", rfEdges.length, "edges");
     // requestAnimationFrame kullanarak render döngüsünün dışında güncelle
     requestAnimationFrame(() => {
-      setNodes(rfNodes);
-      setEdges(updateEdgeHandles(rfNodes, rfEdges));
-      
-      // Node'lar yüklendikten sonra fit view uygula
-      if (rfNodes.length > 0) {
-        setTimeout(() => {
-          reactFlow?.fitView({ 
-            padding: 0.2,  // %20 padding
-            maxZoom: 1,    // Maksimum zoom 1x
-            minZoom: 0.1,  // Minimum zoom 0.1x
-            duration: 300  // Animasyon süresi
-          });
-        }, 100);
+      const hasExistingPositions = prevPositions.current.size > 0;
+      const shouldAutoLayout =
+        rfNodes.length > 0 &&
+        graphVersion !== lastLayoutVersion.current &&
+        !hasExistingPositions;
+
+      if (shouldAutoLayout) {
+        const { density, ranker, direction } = resolveLayoutOptions(rfNodes, rfEdges);
+        const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(
+          rfNodes,
+          rfEdges,
+          direction,
+          density,
+          ranker
+        );
+        lastLayoutVersion.current = graphVersion;
+        setNodes(layoutedNodes);
+        setEdges(updateEdgeHandles(layoutedNodes, layoutedEdges));
+        fromReactFlow(layoutedNodes, layoutedEdges);
+        prevPositions.current = new Map(layoutedNodes.map((node) => [node.id, node.position]));
+      } else {
+        const nodesWithPreservedPositions = rfNodes.map((node) => {
+          const prev = prevPositions.current.get(node.id);
+          return prev ? { ...node, position: prev } : node;
+        });
+        lastLayoutVersion.current = graphVersion;
+        setNodes(nodesWithPreservedPositions);
+        setEdges(updateEdgeHandles(nodesWithPreservedPositions, rfEdges));
+        fromReactFlow(nodesWithPreservedPositions, rfEdges);
+        prevPositions.current = new Map(nodesWithPreservedPositions.map((node) => [node.id, node.position]));
       }
+      
     });
-  }, [rfNodes, rfEdges, updateEdgeHandles]);
+  }, [rfNodes, rfEdges, updateEdgeHandles, fromReactFlow, graphVersion]);
 
-  // Manuel layout uygulama fonksiyonu
-  const applyLayout = useCallback(() => {
-    if (nodes.length > 0) {
-      const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(nodes, edges, layoutDirection);
-      setNodes(layoutedNodes);
-      setEdges(layoutedEdges);
-      // Layouted pozisyonları store'a kaydet
-      fromReactFlow(layoutedNodes, layoutedEdges);
-    }
-  }, [nodes, edges, layoutDirection, fromReactFlow]);
-
-  // Global applyLayout fonksiyonunu expose et
   React.useEffect(() => {
-    (window as any).applyDiagramLayout = applyLayout;
-    return () => {
-      delete (window as any).applyDiagramLayout;
-    };
-  }, [applyLayout]);
+    if (nodes.length === 0) return;
+    requestAnimationFrame(() => {
+      reactFlow.fitView({
+        padding: 0.3,
+        maxZoom: 1,
+        minZoom: 0.05,
+        duration: 300,
+      });
+    });
+  }, [nodes, graphVersion, reactFlow]);
 
   const onNodesChange = useCallback(
     (changes: NodeChange[]) => {
@@ -1169,8 +1231,109 @@ export default function DiagramCanvas() {
     [fromReactFlow, nodes]
   );
 
+  const addNode = useCallback(
+    (type: string, label: string) => {
+      const bounds = wrapperRef.current?.getBoundingClientRect();
+      const center = bounds
+        ? { x: bounds.left + bounds.width / 2, y: bounds.top + bounds.height / 2 }
+        : { x: window.innerWidth / 2, y: window.innerHeight / 2 };
+      const position = reactFlow.screenToFlowPosition(center);
+      const newNode: Node = {
+        id: uuid(),
+        type: "default",
+        position,
+        data: { label, nodeType: type },
+      };
+      setNodes((prev) => {
+        const next = [...prev, newNode];
+        setEdges((currentEdges) => {
+          fromReactFlow(next, currentEdges);
+          return currentEdges;
+        });
+        return next;
+      });
+    },
+    [fromReactFlow, reactFlow]
+  );
+
+  const duplicateSelection = useCallback(() => {
+    const selectedNodes = nodes.filter((node) => node.selected);
+    if (selectedNodes.length === 0) return;
+    const clones = selectedNodes.map((node) => ({
+      ...node,
+      id: uuid(),
+      selected: false,
+      position: {
+        x: node.position.x + 40,
+        y: node.position.y + 40,
+      },
+    }));
+    const next = [...nodes, ...clones];
+    setNodes(next);
+    setEdges((currentEdges) => {
+      fromReactFlow(next, currentEdges);
+      return currentEdges;
+    });
+  }, [nodes, fromReactFlow]);
+
+  const clearAll = useCallback(() => {
+    setNodes([]);
+    setEdges([]);
+    fromReactFlow([], []);
+  }, [fromReactFlow]);
+
+  const deleteSelection = useCallback(() => {
+    setNodes((prev) => {
+      const remainingNodes = prev.filter((node) => !node.selected);
+      setEdges((currentEdges) => {
+        const remainingEdges = currentEdges.filter(
+          (edge) =>
+            !edge.selected &&
+            !prev.find((node) => node.selected && (edge.source === node.id || edge.target === node.id))
+        );
+        fromReactFlow(remainingNodes, remainingEdges);
+        return remainingEdges;
+      });
+      return remainingNodes;
+    });
+  }, [fromReactFlow]);
+
   return (
-    <div style={{ width: "100%", height: "100%", position: "relative" }}>
+    <div ref={wrapperRef} style={{ width: "100%", height: "100%", position: "relative" }}>
+      <div
+        style={{
+          position: "absolute",
+          top: 16,
+          right: 16,
+          zIndex: 10,
+          display: "flex",
+          gap: 8,
+          padding: "8px 10px",
+          borderRadius: 12,
+          background: "var(--card-bg)",
+          border: "1px solid var(--border)",
+          boxShadow: "0 6px 18px rgba(0,0,0,0.08)",
+        }}
+      >
+        <button type="button" onClick={() => setToolsOpen((prev) => !prev)}>
+          {toolsOpen ? "Araçları Gizle" : "Araçlar"}
+        </button>
+        {toolsOpen && (
+          <>
+            <button type="button" onClick={() => addNode("process", "Yeni Adım")}>+ Süreç</button>
+            <button type="button" onClick={() => addNode("decision", "Karar")}>+ Karar</button>
+            <button type="button" onClick={() => addNode("note", "Not")}>+ Not</button>
+            <button type="button" onClick={() => addNode("actor", "Aktör")}>+ Aktör</button>
+            <button type="button" onClick={() => addNode("datastore", "Depo")}>+ Veri Deposu</button>
+            <button type="button" onClick={() => addNode("cloud_service", "Bulut")}>+ Bulut</button>
+            <button type="button" onClick={() => addNode("message_broker", "Mesajlaşma")}>+ Mesajlaşma</button>
+            <button type="button" onClick={() => addNode("monitoring", "İzleme")}>+ İzleme</button>
+            <button type="button" onClick={duplicateSelection}>Kopyala</button>
+            <button type="button" onClick={deleteSelection}>Sil</button>
+            <button type="button" onClick={clearAll}>Temizle</button>
+          </>
+        )}
+      </div>
       <ReactFlow
         nodes={nodes}
         edges={edges}
@@ -1179,9 +1342,9 @@ export default function DiagramCanvas() {
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
         fitView
-        fitViewOptions={{ padding: 0.2, maxZoom: 1.2, duration: 500 }}
-        minZoom={0.1}
-        maxZoom={4}
+        fitViewOptions={{ padding: 0.3, maxZoom: 1.1, minZoom: 0.05, duration: 500 }}
+        minZoom={0.05}
+        maxZoom={2}
         edgesUpdatable={true}
         edgesFocusable={true}
         elevateEdgesOnSelect={true}
@@ -1210,15 +1373,7 @@ export default function DiagramCanvas() {
         autoPanOnConnect={true}
         autoPanOnNodeDrag={true}
         reconnectRadius={100}
-        minZoom={0.1}
-        maxZoom={2}
         defaultViewport={{ x: 0, y: 0, zoom: 0.8 }}
-        fitView
-        fitViewOptions={{ 
-          padding: 0.2,
-          maxZoom: 1,
-          minZoom: 0.1
-        }}
       >
         <svg width="0" height="0">
           <defs>
@@ -1249,5 +1404,13 @@ export default function DiagramCanvas() {
         <Controls showInteractive={false} />
       </ReactFlow>
     </div>
+  );
+}
+
+export default function DiagramCanvas() {
+  return (
+    <ReactFlowProvider>
+      <DiagramCanvasInner />
+    </ReactFlowProvider>
   );
 }

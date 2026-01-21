@@ -5,7 +5,7 @@ import DiagramCanvas from "./components/DiagramCanvas";
 
 export default function App() {
   const [theme, setTheme] = useState<"light" | "dark">(
-    () => (localStorage.getItem("theme") as any) || "light"
+    () => (localStorage.getItem("theme") as any) || "dark"
   );
 
   useEffect(() => {

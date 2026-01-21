@@ -1,31 +1,39 @@
 :root {
-  --bg: white;
-  --text: #333;
-  --border: #ddd;
-  --block-bg: white;
-  --hover-bg: #f5f5f5;
-  --input-bg: white;
-  --input-border: #ccc;
-  --button-bg: white;
-  --button-border: #bbb;
-  --secondary-text: #666;
-  --chevron: #999;
-  --chevron-open: #333;
+  --bg: #f7f7f8;
+  --text: #1f2937;
+  --border: #e5e7eb;
+  --block-bg: #ffffff;
+  --card-bg: #ffffff;
+  --hover-bg: #f3f4f6;
+  --input-bg: #ffffff;
+  --input-border: #d1d5db;
+  --button-bg: #ffffff;
+  --button-border: #cbd5f5;
+  --secondary-text: #6b7280;
+  --chevron: #9ca3af;
+  --chevron-open: #111827;
+  --canvas-bg: #0f1115;
+  --edge-color: #e5e7eb;
+  --edge-glow: rgba(255, 255, 255, 0.35);
 }
 
 [data-theme="dark"] {
-  --bg: #1a1a1a;
-  --text: #e0e0e0;
-  --border: #444;
-  --block-bg: #2a2a2a;
-  --hover-bg: #333;
-  --input-bg: #2a2a2a;
-  --input-border: #555;
-  --button-bg: #2a2a2a;
-  --button-border: #555;
-  --secondary-text: #999;
-  --chevron: #777;
-  --chevron-open: #e0e0e0;
+  --bg: #141414;
+  --text: #e5e7eb;
+  --border: #2d2f35;
+  --block-bg: #1b1d23;
+  --card-bg: #1a1f26;
+  --hover-bg: #20232b;
+  --input-bg: #1f2128;
+  --input-border: #2f3440;
+  --button-bg: #1f232b;
+  --button-border: #323848;
+  --secondary-text: #9ca3af;
+  --chevron: #6b7280;
+  --chevron-open: #e5e7eb;
+  --canvas-bg: #0e1014;
+  --edge-color: #e5e7eb;
+  --edge-glow: rgba(255, 255, 255, 0.45);
 }
 
 html, body, #root { 
@@ -193,7 +201,9 @@ h3 { margin: 6px 0 10px 0; font-size: 14px; color: var(--text); }
 
 /* ReactFlow dark mode support */
 .react-flow {
-  background: var(--bg);
+  background: radial-gradient(circle at 20% 20%, rgba(99, 102, 241, 0.08), transparent 40%),
+    radial-gradient(circle at 80% 0%, rgba(236, 72, 153, 0.08), transparent 35%),
+    var(--canvas-bg);
 }
 
 .react-flow__node {
@@ -212,7 +222,8 @@ h3 { margin: 6px 0 10px 0; font-size: 14px; color: var(--text); }
 }
 
 .react-flow__edge-path {
-  stroke: var(--border);
+  stroke: var(--edge-color);
+  filter: drop-shadow(0 0 6px var(--edge-glow));
 }
 
 .react-flow__controls {
@@ -236,7 +247,7 @@ h3 { margin: 6px 0 10px 0; font-size: 14px; color: var(--text); }
 }
 
 .react-flow__background {
-  background: var(--bg);
+  background: var(--canvas-bg);
 }
 
 /* Handle'ları varsayılan olarak gizle, hover/connect sırasında göster */

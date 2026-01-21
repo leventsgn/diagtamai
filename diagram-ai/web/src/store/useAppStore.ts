@@ -52,13 +52,55 @@ function saveLlm(cfg: LlmConfig) {
 const initialGraph: GraphState = {
   version: "init0001",
   nodes: [
-    { id: "USR", type: "actor", x: 100, y: 100, label: "Kullanıcı" },
-    { id: "START", type: "start", x: 300, y: 100, label: "Başla" },
-    { id: "END", type: "end", x: 500, y: 100, label: "Bitti" },
+    { id: "USR", type: "actor", x: 100, y: 100, label: "Müşteri" },
+    { id: "WEB", type: "web_client", x: 300, y: 100, label: "Web Client" },
+    { id: "MOB", type: "mobile_app", x: 300, y: 260, label: "Mobil App" },
+    { id: "CDN", type: "cdn", x: 520, y: 160, label: "CDN" },
+    { id: "LB", type: "load_balancer", x: 720, y: 160, label: "Load Balancer" },
+    { id: "GW", type: "api_gateway", x: 920, y: 160, label: "API Gateway" },
+    { id: "API", type: "api_server", x: 1120, y: 160, label: "API Server" },
+    { id: "AUTH", type: "auth_service", x: 1120, y: 320, label: "Auth Service" },
+    { id: "CAT", type: "microservice", x: 1320, y: 80, label: "Catalog Service" },
+    { id: "ORD", type: "microservice", x: 1320, y: 200, label: "Order Service" },
+    { id: "PAY", type: "payment_gateway", x: 1320, y: 320, label: "Payment Gateway" },
+    { id: "INV", type: "microservice", x: 1320, y: 440, label: "Inventory Service" },
+    { id: "SHIP", type: "microservice", x: 1320, y: 560, label: "Shipping Service" },
+    { id: "MQ", type: "message_broker", x: 1520, y: 260, label: "Event Bus" },
+    { id: "JOB", type: "background_job", x: 1720, y: 260, label: "Async Worker" },
+    { id: "SQL", type: "sql_database", x: 1520, y: 80, label: "Primary DB" },
+    { id: "CACHE", type: "cache", x: 1520, y: 160, label: "Redis Cache" },
+    { id: "OBJ", type: "object_storage", x: 1520, y: 360, label: "Object Storage" },
+    { id: "SEARCH", type: "analytics", x: 1520, y: 480, label: "Search Index" },
+    { id: "MAIL", type: "email_service", x: 1720, y: 360, label: "Email Provider" },
+    { id: "SMS", type: "sms_service", x: 1720, y: 440, label: "SMS Gateway" },
+    { id: "OBS", type: "monitoring", x: 1720, y: 520, label: "Monitoring" },
   ],
   edges: [
-    { id: "E1", from: "USR", to: "START", label: "tıklar" },
-    { id: "E2", from: "START", to: "END", label: "devam" },
+    { id: "E1", from: "USR", to: "WEB", label: "ziyaret" },
+    { id: "E2", from: "USR", to: "MOB", label: "kullanır" },
+    { id: "E3", from: "WEB", to: "CDN", label: "statik içerik" },
+    { id: "E4", from: "MOB", to: "CDN", label: "statik içerik" },
+    { id: "E5", from: "CDN", to: "LB", label: "proxy" },
+    { id: "E6", from: "LB", to: "GW", label: "routing" },
+    { id: "E7", from: "GW", to: "API", label: "API çağrısı" },
+    { id: "E8", from: "API", to: "AUTH", label: "kimlik" },
+    { id: "E9", from: "API", to: "CAT", label: "ürün listesi" },
+    { id: "E10", from: "API", to: "ORD", label: "sipariş" },
+    { id: "E11", from: "ORD", to: "PAY", label: "ödeme" },
+    { id: "E12", from: "ORD", to: "INV", label: "stok kontrol" },
+    { id: "E13", from: "ORD", to: "SHIP", label: "kargo" },
+    { id: "E14", from: "CAT", to: "SQL", label: "okuma" },
+    { id: "E15", from: "CAT", to: "CACHE", label: "önbellek" },
+    { id: "E16", from: "ORD", to: "SQL", label: "yazma" },
+    { id: "E17", from: "INV", to: "SQL", label: "stok" },
+    { id: "E18", from: "SHIP", to: "SQL", label: "adres" },
+    { id: "E19", from: "PAY", to: "OBJ", label: "dekont" },
+    { id: "E20", from: "ORD", to: "MQ", label: "event" },
+    { id: "E21", from: "MQ", to: "JOB", label: "tüket" },
+    { id: "E22", from: "JOB", to: "MAIL", label: "mail" },
+    { id: "E23", from: "JOB", to: "SMS", label: "sms" },
+    { id: "E24", from: "API", to: "SEARCH", label: "arama" },
+    { id: "E25", from: "API", to: "OBS", label: "metrics" },
   ],
 };
 
@@ -87,10 +129,6 @@ export const useAppStore = create<{
 
   status: string;
   setStatus: (v: string) => void;
-
-  // Layout direction
-  layoutDirection: 'TB' | 'LR';
-  setLayoutDirection: (v: 'TB' | 'LR') => void;
 
   toReactFlow: () => { nodes: Node[]; edges: Edge[] };
   fromReactFlow: (nodes: Node[], edges: Edge[]) => void;
@@ -151,9 +189,6 @@ export const useAppStore = create<{
 
   status: "Hazır",
   setStatus: (v) => set({ status: v }),
-
-  layoutDirection: 'TB',
-  setLayoutDirection: (v) => set({ layoutDirection: v }),
 
   applyLayout: () => {
     // Bu fonksiyon artık buton tıklamasıyla çağrılacak

@@ -1,0 +1,23 @@
+services:
+  # 1. Backend Service (Node.js)
+  - type: web
+    name: diagram-ai-server
+    env: node
+    plan: free
+    buildCommand: cd server && npm install
+    startCommand: cd server && npm start
+    envVars:
+      - key: NODE_VERSION
+        value: 20.11.0
+      - key: PORT
+        value: 10000
+
+  # 2. Frontend Static Site (React)
+  - type: static
+    name: diagram-ai-web
+    env: static
+    buildCommand: cd web && npm install && npm run build
+    staticPublishPath: web/dist
+    envVars:
+      - key: NODE_VERSION
+        value: 20.11.0

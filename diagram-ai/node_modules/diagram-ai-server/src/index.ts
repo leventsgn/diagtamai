@@ -14,7 +14,7 @@ console.log("Loading diagram routes...");
 app.use("/api/diagram", diagramRoutes);
 console.log("Diagram routes loaded successfully");
 
-const PORT = 3002;
+const PORT = process.env.PORT || 3002;
 const server = app.listen(PORT, '0.0.0.0', () => {
   console.log(`✅ Server running on http://0.0.0.0:${PORT}`);
   console.log(`✅ Health: http://localhost:${PORT}/health`);

@@ -2,10 +2,13 @@
   "name": "diagram-ai-web",
   "private": true,
   "type": "module",
+  "homepage": "https://leventsgn.github.io/diagtamai",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "predeploy": "npm run build",
+    "deploy": "gh-pages -d dist"
   },
   "dependencies": {
     "@tisoap/react-flow-smart-edge": "^4.0.1",

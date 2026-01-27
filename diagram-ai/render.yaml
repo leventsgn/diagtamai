@@ -1,23 +1,25 @@
 services:
-  # 1. Backend Service (Node.js)
   - type: web
     name: diagram-ai-server
     env: node
-    plan: free
-    buildCommand: cd server && npm install
-    startCommand: cd server && npm start
+    rootDir: server
+    buildCommand: npm install && npm run build
+    startCommand: npm run start
     envVars:
-      - key: NODE_VERSION
-        value: 20.11.0
       - key: PORT
         value: 10000
+    plan: free
 
-  # 2. Frontend Static Site (React)
   - type: static
     name: diagram-ai-web
     env: static
-    buildCommand: cd web && npm install && npm run build
-    staticPublishPath: web/dist
+    rootDir: web
+    buildCommand: npm install && npm run build
+    staticPublishPath: ./dist
     envVars:
-      - key: NODE_VERSION
-        value: 20.11.0
+      - key: VITE_API_URL
+        fromService:
+          type: web
+          name: diagram-ai-server
+          property: url
+          envVarKey: VITE_API_URL # This might need a trick, usually we just set the URL. But for static sites, we need it at build time.

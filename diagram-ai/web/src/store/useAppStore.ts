@@ -37,18 +37,18 @@ function loadLlm(): LlmConfig {
   const raw = localStorage.getItem("llm_config");
   if (!raw) {
     return {
-      url: "",
+      url: "https://api.groq.com/openai/v1/chat/completions",
       token: "",
-      model: "",
+      model: "llama-3.3-70b-versatile",
     };
   }
   try {
     return JSON.parse(raw);
   } catch {
     return {
-      url: "",
+      url: "https://api.groq.com/openai/v1/chat/completions",
       token: "",
-      model: "",
+      model: "llama-3.3-70b-versatile",
     };
   }
 }

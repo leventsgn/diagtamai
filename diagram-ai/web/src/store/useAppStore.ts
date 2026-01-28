@@ -33,6 +33,19 @@ export type GraphState = {
   }[];
 };
 
+function loadRepoUrl(): string {
+  const raw = localStorage.getItem("repo_url");
+  return raw ?? "";
+}
+
+function saveRepoUrl(url: string) {
+  if (!url) {
+    localStorage.removeItem("repo_url");
+    return;
+  }
+  localStorage.setItem("repo_url", url);
+}
+
 function loadLlm(): LlmConfig {
   const raw = localStorage.getItem("llm_config");
   if (!raw) {
@@ -181,6 +194,9 @@ export const useAppStore = create<{
   llm: LlmConfig;
   setLlm: (p: Partial<LlmConfig>) => void;
 
+  repoUrl: string;
+  setRepoUrl: (v: string) => void;
+
   graph: GraphState;
   setGraph: (g: GraphState) => void;
 
@@ -221,6 +237,13 @@ export const useAppStore = create<{
     const next = { ...get().llm, ...p };
     saveLlm(next);
     set({ llm: next });
+  },
+
+  repoUrl: loadRepoUrl(),
+  setRepoUrl: (v) => {
+    const next = v.trim();
+    saveRepoUrl(next);
+    set({ repoUrl: next });
   },
 
   graph: initialGraph,

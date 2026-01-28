@@ -1,7 +1,7 @@
 import React, { useMemo, useRef } from "react";
 import { useAppStore } from "../store/useAppStore";
 import { debounce } from "../lib/debounce";
-import { requestPatch, uuid } from "../lib/api";
+import { isValidGithubRepoUrl, requestPatch, uuid } from "../lib/api";
 
 export default function PromptPanel() {
   const prompt = useAppStore((s) => s.prompt);
@@ -20,6 +20,9 @@ export default function PromptPanel() {
   const graph = useAppStore((s) => s.graph);
   const setGraph = useAppStore((s) => s.setGraph);
 
+  const repoUrl = useAppStore((s) => s.repoUrl);
+  const setRepoUrl = useAppStore((s) => s.setRepoUrl);
+
   const status = useAppStore((s) => s.status);
   const setStatus = useAppStore((s) => s.setStatus);
 
@@ -28,6 +31,11 @@ export default function PromptPanel() {
   async function runOnce(instruction: string) {
     if (!llm.url || !llm.model || !llm.token) {
       setStatus("LLM ayarları eksik (URL/Model/Token).");
+      return;
+    }
+
+    if (repoUrl && !isValidGithubRepoUrl(repoUrl)) {
+      setStatus("GitHub Repo URL formatı hatalı. Örn: https://github.com/org/repo");
       return;
     }
 
@@ -49,6 +57,7 @@ export default function PromptPanel() {
         current_graph: graph,
         nodeLimit,
         lockPositions,
+        repoUrl,
         signal: abort.signal,
       });
 
@@ -73,8 +82,10 @@ export default function PromptPanel() {
       }, 400),
     // deps intentionally limited
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [llm.url, llm.model, llm.token, graph.version, nodeLimit, lockPositions]
+    [llm.url, llm.model, llm.token, graph.version, nodeLimit, lockPositions, repoUrl]
   );
+
+  const repoUrlIsValid = !repoUrl || isValidGithubRepoUrl(repoUrl);
 
   return (
     <div className="block">
@@ -109,6 +120,19 @@ export default function PromptPanel() {
       <div className="block">
         <label>Node Limit</label>
         <input type="number" value={nodeLimit} min={10} max={500} onChange={(e) => setNodeLimit(Number(e.target.value))} />
+      </div>
+
+      <div className="block">
+        <label>GitHub Repo URL</label>
+        <input
+          type="url"
+          placeholder="https://github.com/owner/repo"
+          value={repoUrl}
+          onChange={(e) => setRepoUrl(e.target.value)}
+        />
+        {!repoUrlIsValid && (
+          <small style={{ color: "#ef4444" }}>Geçerli bir GitHub repo URL girin (ör. https://github.com/org/repo).</small>
+        )}
       </div>
 
       <div className="btnrow">

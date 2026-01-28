@@ -37,7 +37,12 @@ export function buildUserPrompt(input: {
   node_limit: number;
   current_graph_json: string;
   instruction: string;
+  repo_summary?: string | null;
 }): string {
+  const repoSummaryBlock = input.repo_summary
+    ? ["REPO SUMMARY:", input.repo_summary, ""]
+    : [];
+
   return [
     `Base Version: "${input.base_version}"`,
     "",
@@ -51,6 +56,7 @@ export function buildUserPrompt(input: {
     "- INFER missing but critical infra (LBs, Gateways, Caches, Workers).",
     "- USE professional Turkish labels for nodes.",
     "",
+    ...repoSummaryBlock,
     "Current Graph State:",
     input.current_graph_json,
     "",

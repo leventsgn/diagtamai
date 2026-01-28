@@ -9,6 +9,7 @@ import {
   buildRepairSystemPrompt,
   buildRepairUserPrompt,
 } from "../llm/prompts.js";
+import { buildRepoSummary } from "../llm/repoSummary.js";
 
 const router = Router();
 
@@ -21,6 +22,7 @@ const ReqSchema = z.object({
   request_id: z.string().min(1),
   base_version: z.string().min(1),
   instruction: z.string().min(1),
+  repo_url: z.string().url().optional(),
   current_graph: Graph,
   constraints: z.object({
     language: z.literal("tr").default("tr"),
@@ -121,10 +123,22 @@ router.post("/patch", async (req, res) => {
   const parsed = ReqSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: parsed.error.flatten() });
 
-  const { llm, request_id, base_version, instruction, current_graph, constraints } = parsed.data;
+  const { llm, request_id, base_version, instruction, current_graph, constraints, repo_url } = parsed.data;
 
   if (base_version !== current_graph.version) {
     return res.status(409).json({ error: "base_version does not match current_graph.version" });
+  }
+
+  let repoSummary: string | null = null;
+  if (repo_url) {
+    try {
+      repoSummary = await buildRepoSummary({
+        repoUrl: repo_url,
+        requesterId: req.ip ?? request_id,
+      });
+    } catch (error) {
+      console.warn("Repo summary failed:", error);
+    }
   }
 
   const system = buildSystemPrompt();
@@ -134,6 +148,7 @@ router.post("/patch", async (req, res) => {
     node_limit: constraints.node_limit,
     current_graph_json: JSON.stringify(current_graph, null, 2),
     instruction,
+    repo_summary: repoSummary,
   });
 
   console.log("--- REQUEST ---");

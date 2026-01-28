@@ -1,4 +1,4 @@
-import React, { useMemo, useRef } from "react";
+import React, { useMemo, useRef, useState } from "react";
 import { useAppStore } from "../store/useAppStore";
 import { debounce } from "../lib/debounce";
 import { isValidGithubRepoUrl, requestPatch, uuid } from "../lib/api";
@@ -27,6 +27,7 @@ export default function PromptPanel() {
   const setStatus = useAppStore((s) => s.setStatus);
 
   const inflight = useRef<{ requestId: string; baseVersion: string; abort: AbortController } | null>(null);
+  const [refreshRepo, setRefreshRepo] = useState(false);
 
   async function runOnce(instruction: string) {
     if (!llm.url || !llm.model || !llm.token) {
@@ -57,7 +58,7 @@ export default function PromptPanel() {
         current_graph: graph,
         nodeLimit,
         lockPositions,
-        repoUrl,
+        refreshRepo,
         signal: abort.signal,
       });
 
@@ -123,16 +124,14 @@ export default function PromptPanel() {
       </div>
 
       <div className="block">
-        <label>GitHub Repo URL</label>
-        <input
-          type="url"
-          placeholder="https://github.com/owner/repo"
-          value={repoUrl}
-          onChange={(e) => setRepoUrl(e.target.value)}
-        />
-        {!repoUrlIsValid && (
-          <small style={{ color: "#ef4444" }}>Geçerli bir GitHub repo URL girin (ör. https://github.com/org/repo).</small>
-        )}
+        <label className="row">
+          <input
+            type="checkbox"
+            checked={refreshRepo}
+            onChange={(e) => setRefreshRepo(e.target.checked)}
+          />
+          <span>Repo bağlamını yenile</span>
+        </label>
       </div>
 
       <div className="btnrow">

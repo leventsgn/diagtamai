@@ -8,7 +8,7 @@ export async function requestPatch(args: {
   current_graph: GraphState;
   nodeLimit: number;
   lockPositions: boolean;
-  repoUrl?: string;
+  refreshRepo?: boolean;
   signal?: AbortSignal;
 }) {
   // Local development backend
@@ -36,7 +36,19 @@ export async function requestPatch(args: {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     signal: args.signal,
-    body: JSON.stringify(payload),
+    body: JSON.stringify({
+      llm: args.llm,
+      request_id: args.request_id,
+      base_version: args.base_version,
+      instruction: args.instruction,
+      current_graph: args.current_graph,
+      refresh_repo: args.refreshRepo,
+      constraints: {
+        language: "tr",
+        node_limit: args.nodeLimit,
+        lock_positions: args.lockPositions,
+      },
+    }),
   });
 
   const json = await res.json().catch(() => ({}));

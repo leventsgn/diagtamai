@@ -24,6 +24,9 @@ export function buildSystemPrompt(): string {
     "2. NO spaces, NO special characters, NO capitals in IDs.",
     "3. Edges MUST reference IDs that exist in the graph or are being added in this patch.",
     "",
+    "REPO CONTEXT RULE:",
+    "- Repo bağlamı değişmedikçe aynı repo özetini kullan. Repo URL veya ETag değiştiyse yeni özet üretilebilir.",
+    "",
     "NODE TYPES (Reference for icon mapping):",
     "- web_client, mobile_app, user, cloud, server, microservice, storage, database, sql_database, redis, cache, lambda, kubernetes, docker, firewall, security, monitoring, analytics, gateway, load_balancer, cdn, notification, message_broker, queue.",
     "",
@@ -37,17 +40,21 @@ export function buildUserPrompt(input: {
   node_limit: number;
   current_graph_json: string;
   instruction: string;
-  repo_summary?: string | null;
+  repo_url?: string;
+  repo_summary?: string;
+  repo_etag?: string;
 }): string {
-  const repoSummaryBlock = input.repo_summary
-    ? ["REPO SUMMARY:", input.repo_summary, ""]
-    : [];
-
-  return [
+  const lines = [
     `Base Version: "${input.base_version}"`,
     "",
     "USER INSTRUCTION:",
     `"${input.instruction}"`,
+    "",
+    "REPO CONTEXT:",
+    "- Repo bağlamı değişmedikçe aynı repo özetini kullan.",
+    input.repo_url ? `Repo URL: ${input.repo_url}` : "Repo URL: (none)",
+    input.repo_etag ? `Repo ETag: ${input.repo_etag}` : "Repo ETag: (none)",
+    input.repo_summary ? `Repo Summary:\n${input.repo_summary}` : "Repo Summary: (none)",
     "",
     "ARCHITECTURAL REQUIREMENTS:",
     "- ANALYZE functional and security needs before generating steps.",
@@ -61,7 +68,8 @@ export function buildUserPrompt(input: {
     input.current_graph_json,
     "",
     "Return the RAW JSON patch now. No markdown, no fences, no explanations:",
-  ].join("\n");
+  ];
+  return lines.join("\n");
 }
 
 export function buildRepairSystemPrompt(): string {

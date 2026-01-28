@@ -14,6 +14,24 @@ export async function requestPatch(args: {
   // Local development backend
   const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3002/api/diagram/patch";
 
+  const repoUrl = args.repoUrl?.trim();
+  const payload: Record<string, unknown> = {
+    llm: args.llm,
+    request_id: args.request_id,
+    base_version: args.base_version,
+    instruction: args.instruction,
+    current_graph: args.current_graph,
+    constraints: {
+      language: "tr",
+      node_limit: args.nodeLimit,
+      lock_positions: args.lockPositions,
+    },
+  };
+
+  if (repoUrl && isValidGithubRepoUrl(repoUrl)) {
+    payload.repo_url = repoUrl;
+  }
+
   const res = await fetch(API_URL, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -42,4 +60,17 @@ export async function requestPatch(args: {
 
 export function uuid() {
   return crypto.randomUUID();
+}
+
+export function isValidGithubRepoUrl(value: string) {
+  try {
+    const url = new URL(value);
+    if (!["http:", "https:"].includes(url.protocol)) return false;
+    if (url.hostname !== "github.com") return false;
+    const parts = url.pathname.split("/").filter(Boolean);
+    if (parts.length !== 2) return false;
+    return true;
+  } catch {
+    return false;
+  }
 }

@@ -63,6 +63,7 @@ export function buildUserPrompt(input: {
     "- INFER missing but critical infra (LBs, Gateways, Caches, Workers).",
     "- USE professional Turkish labels for nodes.",
     "",
+    ...repoSummaryBlock,
     "Current Graph State:",
     input.current_graph_json,
     "",

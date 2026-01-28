@@ -10,6 +10,7 @@ import {
   buildRepairSystemPrompt,
   buildRepairUserPrompt,
 } from "../llm/prompts.js";
+import { buildRepoSummary } from "../llm/repoSummary.js";
 
 const router = Router();
 
@@ -36,6 +37,7 @@ const ReqSchema = z.object({
   request_id: z.string().min(1),
   base_version: z.string().min(1),
   instruction: z.string().min(1),
+  repo_url: z.string().url().optional(),
   current_graph: Graph,
   repo_url: z.string().url().optional(),
   repo_summary: z.string().min(1).optional(),

@@ -1,7 +1,7 @@
 import React, { useMemo, useRef, useState } from "react";
 import { useAppStore } from "../store/useAppStore";
 import { debounce } from "../lib/debounce";
-import { requestPatch, uuid } from "../lib/api";
+import { isValidGithubRepoUrl, requestPatch, uuid } from "../lib/api";
 
 export default function PromptPanel() {
   const prompt = useAppStore((s) => s.prompt);
@@ -20,6 +20,9 @@ export default function PromptPanel() {
   const graph = useAppStore((s) => s.graph);
   const setGraph = useAppStore((s) => s.setGraph);
 
+  const repoUrl = useAppStore((s) => s.repoUrl);
+  const setRepoUrl = useAppStore((s) => s.setRepoUrl);
+
   const status = useAppStore((s) => s.status);
   const setStatus = useAppStore((s) => s.setStatus);
 
@@ -29,6 +32,11 @@ export default function PromptPanel() {
   async function runOnce(instruction: string) {
     if (!llm.url || !llm.model || !llm.token) {
       setStatus("LLM ayarları eksik (URL/Model/Token).");
+      return;
+    }
+
+    if (repoUrl && !isValidGithubRepoUrl(repoUrl)) {
+      setStatus("GitHub Repo URL formatı hatalı. Örn: https://github.com/org/repo");
       return;
     }
 
@@ -75,8 +83,10 @@ export default function PromptPanel() {
       }, 400),
     // deps intentionally limited
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [llm.url, llm.model, llm.token, graph.version, nodeLimit, lockPositions]
+    [llm.url, llm.model, llm.token, graph.version, nodeLimit, lockPositions, repoUrl]
   );
+
+  const repoUrlIsValid = !repoUrl || isValidGithubRepoUrl(repoUrl);
 
   return (
     <div className="block">

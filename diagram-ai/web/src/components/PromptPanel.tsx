@@ -1,4 +1,4 @@
-import React, { useMemo, useRef } from "react";
+import React, { useMemo, useRef, useState } from "react";
 import { useAppStore } from "../store/useAppStore";
 import { debounce } from "../lib/debounce";
 import { requestPatch, uuid } from "../lib/api";
@@ -24,6 +24,7 @@ export default function PromptPanel() {
   const setStatus = useAppStore((s) => s.setStatus);
 
   const inflight = useRef<{ requestId: string; baseVersion: string; abort: AbortController } | null>(null);
+  const [refreshRepo, setRefreshRepo] = useState(false);
 
   async function runOnce(instruction: string) {
     if (!llm.url || !llm.model || !llm.token) {
@@ -49,6 +50,7 @@ export default function PromptPanel() {
         current_graph: graph,
         nodeLimit,
         lockPositions,
+        refreshRepo,
         signal: abort.signal,
       });
 
@@ -109,6 +111,17 @@ export default function PromptPanel() {
       <div className="block">
         <label>Node Limit</label>
         <input type="number" value={nodeLimit} min={10} max={500} onChange={(e) => setNodeLimit(Number(e.target.value))} />
+      </div>
+
+      <div className="block">
+        <label className="row">
+          <input
+            type="checkbox"
+            checked={refreshRepo}
+            onChange={(e) => setRefreshRepo(e.target.checked)}
+          />
+          <span>Repo bağlamını yenile</span>
+        </label>
       </div>
 
       <div className="btnrow">

@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { z } from "zod";
+import { createHash } from "crypto";
 import { Graph, Patch } from "../graph/schema.js";
 import { applyPatch } from "../graph/applyPatch.js";
 import { callLlm } from "../llm/client.js";
@@ -12,6 +13,20 @@ import {
 
 const router = Router();
 
+type RepoCacheEntry = {
+  summary: string;
+  etag: string;
+  updatedAt: number;
+};
+
+type RepoContext = {
+  repoUrl: string;
+  summary?: string;
+  etag?: string;
+};
+
+const repoSummaryCache = new Map<string, RepoCacheEntry>();
+
 const ReqSchema = z.object({
   llm: z.object({
     url: z.string().url(),
@@ -22,12 +37,52 @@ const ReqSchema = z.object({
   base_version: z.string().min(1),
   instruction: z.string().min(1),
   current_graph: Graph,
+  repo_url: z.string().url().optional(),
+  repo_summary: z.string().min(1).optional(),
+  refresh_repo: z.boolean().optional().default(false),
   constraints: z.object({
     language: z.literal("tr").default("tr"),
     node_limit: z.number().int().min(10).max(500).default(80),
     lock_positions: z.boolean().default(false),
   }),
 });
+
+function buildRepoEtag(summary: string): string {
+  return createHash("sha256").update(summary).digest("hex");
+}
+
+function resolveRepoContext(args: {
+  repoUrl?: string;
+  repoSummary?: string;
+  refreshRepo?: boolean;
+}): RepoContext | null {
+  if (!args.repoUrl) return null;
+
+  const repoUrl = args.repoUrl.trim();
+  if (!repoUrl) return null;
+
+  if (args.refreshRepo) {
+    repoSummaryCache.delete(repoUrl);
+  }
+
+  if (args.repoSummary && args.repoSummary.trim()) {
+    const summary = args.repoSummary.trim();
+    const etag = buildRepoEtag(summary);
+    repoSummaryCache.set(repoUrl, {
+      summary,
+      etag,
+      updatedAt: Date.now(),
+    });
+    return { repoUrl, summary, etag };
+  }
+
+  const cached = repoSummaryCache.get(repoUrl);
+  if (cached) {
+    return { repoUrl, summary: cached.summary, etag: cached.etag };
+  }
+
+  return { repoUrl };
+}
 
 function stripCodeFences(raw: string): string {
   let cleaned = raw.trim();
@@ -121,11 +176,27 @@ router.post("/patch", async (req, res) => {
   const parsed = ReqSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: parsed.error.flatten() });
 
-  const { llm, request_id, base_version, instruction, current_graph, constraints } = parsed.data;
+  const {
+    llm,
+    request_id,
+    base_version,
+    instruction,
+    current_graph,
+    constraints,
+    repo_url,
+    repo_summary,
+    refresh_repo,
+  } = parsed.data;
 
   if (base_version !== current_graph.version) {
     return res.status(409).json({ error: "base_version does not match current_graph.version" });
   }
+
+  const repoContext = resolveRepoContext({
+    repoUrl: repo_url,
+    repoSummary: repo_summary,
+    refreshRepo: refresh_repo,
+  });
 
   const system = buildSystemPrompt();
   const user = buildUserPrompt({
@@ -134,6 +205,9 @@ router.post("/patch", async (req, res) => {
     node_limit: constraints.node_limit,
     current_graph_json: JSON.stringify(current_graph, null, 2),
     instruction,
+    repo_url: repoContext?.repoUrl,
+    repo_summary: repoContext?.summary,
+    repo_etag: repoContext?.etag,
   });
 
   console.log("--- REQUEST ---");

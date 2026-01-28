@@ -8,6 +8,7 @@ export async function requestPatch(args: {
   current_graph: GraphState;
   nodeLimit: number;
   lockPositions: boolean;
+  refreshRepo?: boolean;
   signal?: AbortSignal;
 }) {
   // Local development backend
@@ -23,6 +24,7 @@ export async function requestPatch(args: {
       base_version: args.base_version,
       instruction: args.instruction,
       current_graph: args.current_graph,
+      refresh_repo: args.refreshRepo,
       constraints: {
         language: "tr",
         node_limit: args.nodeLimit,

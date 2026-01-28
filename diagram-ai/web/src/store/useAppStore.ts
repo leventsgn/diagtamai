@@ -211,7 +211,6 @@ export const useAppStore = create<{
   onConnect: (connection: Connection) => void;
   addNode: (type: string, label: string, position: { x: number; y: number }) => void;
   deleteSelection: () => void;
-  groupSelection: () => void;
   layoutTrigger: number;
   layoutDirection: 'LR' | 'TB' | 'RL' | 'BT';
   layoutRanker: 'network-simplex' | 'tight-tree' | 'longest-path';
@@ -427,50 +426,6 @@ export const useAppStore = create<{
 
     set({ rfNodes: remainingNodes, rfEdges: remainingEdges });
     get().fromReactFlow(remainingNodes, remainingEdges);
-  },
-
-  groupSelection: () => {
-    const rfNodes = get().rfNodes;
-    const selectedNodes = rfNodes.filter(n => n.selected && n.data?.nodeType !== 'group');
-    if (selectedNodes.length < 2) return;
-
-    const groupId = "group_" + Date.now();
-    // Simplified bounding box calc
-    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-    selectedNodes.forEach(n => {
-      minX = Math.min(minX, n.position.x);
-      minY = Math.min(minY, n.position.y);
-      maxX = Math.max(maxX, n.position.x + 180);
-      maxY = Math.max(maxY, n.position.y + 120);
-    });
-
-    const padding = 60;
-    const groupNode: Node = {
-      id: groupId,
-      type: "default",
-      position: { x: minX - padding, y: minY - padding },
-      style: { width: (maxX - minX) + padding * 2, height: (maxY - minY) + padding * 2 },
-      data: { label: "Grup", nodeType: "group" },
-    };
-
-    const nextNodes = rfNodes.map(n => {
-      if (n.selected && n.data?.nodeType !== 'group') {
-        return {
-          ...n,
-          parentNode: groupId,
-          extent: 'parent' as const,
-          position: {
-            x: n.position.x - (minX - padding),
-            y: n.position.y - (minY - padding)
-          }
-        };
-      }
-      return n;
-    });
-
-    const finalNodes = [groupNode, ...nextNodes];
-    set({ rfNodes: finalNodes });
-    get().fromReactFlow(finalNodes, get().rfEdges);
   },
 
   toReactFlow: () => {

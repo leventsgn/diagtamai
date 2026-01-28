@@ -18,7 +18,6 @@ import "reactflow/dist/style.css";
 import "reactflow/dist/base.css";
 import dagre from "dagre";
 import { toPng } from "html-to-image";
-import jsPDF from "jspdf";
 import * as Icons from "lucide-react";
 import { useAppStore, getNodeDimensions, getAbsolutePosition, calculateEdgeHandles } from "../store/useAppStore";
 
@@ -344,6 +343,16 @@ function DiagramCanvasInner() {
     if (layoutTrigger > 0) runLayout();
   }, [layoutTrigger, runLayout]);
 
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Delete" || event.key === "Backspace") {
+        useAppStore.getState().deleteSelection();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
   // Initial layout and generation detection
   useEffect(() => {
     if (graphVersion !== lastProcessedVersion.current) {
@@ -443,6 +452,8 @@ function DiagramCanvasInner() {
           {toolsOpen ? "Kapat" : "Bileşenler"}
         </button>
         <button type="button" onClick={() => useAppStore.getState().triggerLayout()} style={{ background: 'var(--accent)', color: 'white' }}>Oto Yerleştir</button>
+        <button type="button" onClick={() => useAppStore.getState().deleteSelection()} style={{ color: '#ff4444' }}>Seçilenleri Sil</button>
+        <button type="button" onClick={() => useAppStore.getState().setGraph({ version: 'v_clear', nodes: [], edges: [] })} style={{ color: '#ff4444' }}>Hepsini Temizle</button>
       </div>
 
       <div style={{ flex: 1, position: "relative" }}>
@@ -571,10 +582,6 @@ function DiagramCanvasInner() {
             </>
           )}
 
-          <div style={{ borderTop: '1px solid var(--border)', marginTop: 20, paddingTop: 12 }}>
-            <button className="sidebar-btn" style={{ color: '#ff4444' }} onClick={() => useAppStore.getState().deleteSelection()}>Seçilenleri Sil</button>
-            <button className="sidebar-btn" style={{ color: '#ff4444' }} onClick={() => useAppStore.getState().setGraph({ version: 'v_clear', nodes: [], edges: [] })}>Hepsini Temizle</button>
-          </div>
         </div>
       </div>
     </div>

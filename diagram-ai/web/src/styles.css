@@ -64,7 +64,8 @@ body,
 .app {
   display: grid;
   grid-template-columns: 380px 1fr;
-  height: 100vh;
+  height: 100dvh;
+  min-height: 100vh;
   overflow: hidden;
   position: relative;
 }
@@ -91,8 +92,8 @@ body,
 .mobile-toggle {
   display: none;
   position: fixed;
-  bottom: 20px;
-  right: 20px;
+  bottom: calc(20px + env(safe-area-inset-bottom));
+  right: calc(20px + env(safe-area-inset-right));
   z-index: 1000;
   width: 56px;
   height: 56px;
@@ -183,7 +184,8 @@ body,
 }
 
 .main {
-  height: 100vh;
+  height: 100dvh;
+  min-height: 100vh;
   background: var(--bg);
   overflow: hidden;
 }
@@ -433,6 +435,8 @@ h3 {
 .react-flow__edge-textbg {
   fill: var(--bg);
   opacity: 0.9;
+  min-height: 100dvh;
+  min-height: 100dvh;
 } 
 .landing-nav-links {
   display: flex;
